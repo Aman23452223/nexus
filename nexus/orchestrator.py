@@ -106,4 +106,12 @@ def execute(intent: str, workspace: str = "", dry_run: bool = False,
         "status": task.status,
     }
     log_event(task_id, "orchestrator", "report", task.status, {"plan": steps})
+    try:
+        from . import store
+        store.record_task(task_id, intent, ws, task.status)
+        prior = store.learn(intent, steps) if task.status == "done" else 0
+    except Exception:
+        prior = 0
+    report["workflow_reused"] = prior > 0
+    report["prior_uses"] = prior
     return report

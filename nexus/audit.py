@@ -6,6 +6,14 @@ from datetime import datetime, timezone
 
 from .vault import redact
 
+
+def _remember(task_id: str, actor: str, tool: str, result: str):
+    try:
+        from . import store
+        store.record_event(task_id, actor, tool, result)
+    except Exception:
+        pass
+
 AUDIT_FILE = os.environ.get("NEXUS_AUDIT_FILE", "./nexus_data/audit_log.jsonl")
 
 
@@ -30,4 +38,5 @@ def log_event(task_id: str, actor: str, tool: str, result: str, evidence: dict |
             f.write(json.dumps(event) + "\n")
     except OSError as e:
         print(f"[audit-fallback] {json.dumps(event)} (file unavailable: {e})")
+    _remember(task_id, actor, tool, result)
     return event
