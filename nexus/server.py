@@ -1,7 +1,7 @@
 """FastAPI control plane (PRD §27): auth-lite, tasks, policy, stop."""
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import orchestrator
 from .tools import desktop
@@ -9,16 +9,37 @@ from .tools import desktop
 app = FastAPI(title="NEXUS MVP", version="0.1.0")
 
 DASHBOARD = """<!doctype html><html><head><meta charset=utf-8>
-<title>NEXUS MVP</title></head><body style="font-family:sans-serif;max-width:720px;margin:40px auto">
+<title>NEXUS MVP</title></head><body style="font-family:sans-serif;max-width:760px;margin:40px auto">
 <h1>NEXUS MVP — permissioned operator</h1>
 <p>Outcome in, verified report out. Policy-gated publish.</p>
 <input id=q size=60 placeholder="e.g. arbitrage-agent health check https://...">
 <button onclick="run()">Run</button> <a href="/health">/health</a> <a href="/docs">/docs</a>
-<pre id=out></pre>
-<script>async function run(){const r=await fetch('/tasks',{method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({intent:document.getElementById('q').value})});
-document.getElementById('out').textContent=JSON.stringify(await r.json(),null,1);}</script>
+<div style="margin:8px 0">
+<button onclick="set('arbitrage-agent health check https://arbitrage-agent-gules.vercel.app')">arbitrage-agent health</button>
+<button onclick="set('tomorrow-land.in health check https://www.tomorrow-land.in')">tomorrow-land health</button>
+</div>
+<div id=out></div>
+<script>
+function set(v){document.getElementById('q').value=v;run();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+async function run(){
+const q=document.getElementById('q').value.trim();
+const out=document.getElementById('out');
+if(!q){out.innerHTML='<p style=color:#a00>Intent likho pehle — khaali command nahi chalegi.</p>';return;}
+out.innerHTML='<p>Working…</p>';
+const r=await fetch('/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({intent:q})});
+if(!r.ok){out.innerHTML='<p style=color:#a00>Rejected: '+(await r.text()).slice(0,200)+'</p>';return;}
+const d=await r.json();
+let h='<h3>Status: '+esc(d.status)+' <small>('+esc(d.task_id)+' · '+esc(d.workspace)+')</small></h3>';
+h+='<p><b>Intent:</b> '+esc(d.intent)+'<br><b>Plan:</b> '+esc(d.plan.join(' → '))+'</p>';
+if(d.workflow_reused)h+='<p>♻ Known workflow (used '+d.prior_uses+'× before)</p>';
+h+='<ul>'+d.results.map(x=>'<li><b>'+esc(x.tool)+'</b> — '+esc(x.status)+
+'<br><small>'+esc(JSON.stringify(x.detail).slice(0,300))+'</small></li>').join('')+'</ul>';
+if(d.needs_confirmation&&d.needs_confirmation.length)
+h+='<p><b>Needs approval:</b><ul>'+d.needs_confirmation.map(c=>'<li>'+esc(c.tool)+': '+esc(c.reason)+'</li>').join('')+'</ul></p>';
+out.innerHTML=h;}
+</script>
 </body></html>"""
 
 
@@ -28,7 +49,7 @@ def dashboard():
 
 
 class TaskIn(BaseModel):
-    intent: str
+    intent: str = Field(min_length=3, max_length=500)
     workspace: str = ""
     dry_run: bool = False
     auto_approve: bool = False

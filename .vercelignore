@@ -1,0 +1,7 @@
+# Vercel upload blocklist — local state must never ship to production.
+nexus_data/
+.env
+__pycache__/
+*.pyc
+tests/
+.pytest_cache/
