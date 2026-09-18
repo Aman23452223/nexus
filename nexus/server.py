@@ -17,10 +17,12 @@ DASHBOARD = """<!doctype html><html><head><meta charset=utf-8>
 <button onclick="mic()" title="bolke bolo 🎤">🎤</button>
 <button onclick="voice=!voice;this.textContent=voice?'🔊':'🔇'" title="jawab sunna">🔊</button>
 <a href="/health">/health</a> <a href="/docs">/docs</a>
-<div style="margin:8px 0">
+<div style="margin:8px 0">☁️ Cloud:
+<button onclick="set('health check https://example.com')">example health</button>
+</div>
+<div style="margin:8px 0">💻 Laptop (mere laptop pe khulega — yahan dabane se sirf command milegi):
 <button onclick="set('whatsapp khol')">WhatsApp khol</button>
 <button onclick="set('antigravity me nexus khol C:\\Users\\amanc\\nexus')">Antigravity + nexus</button>
-<button onclick="set('health check https://example.com')">example health</button>
 </div>
 <div id=out></div>
 <script>
@@ -53,8 +55,10 @@ const d=await r.json();
 let h='<h3>Status: '+esc(d.status)+' <small>('+esc(d.task_id)+' · '+esc(d.workspace)+')</small></h3>';
 h+='<p><b>Intent:</b> '+esc(d.intent)+'<br><b>Plan:</b> '+esc(d.plan.join(' → '))+'</p>';
 if(d.workflow_reused)h+='<p>♻ Known workflow (used '+d.prior_uses+'× before)</p>';
-h+='<ul>'+d.results.map(x=>'<li><b>'+esc(x.tool)+'</b> — '+esc(x.status)+
-'<br><small>'+esc(JSON.stringify(x.detail).slice(0,300))+'</small></li>').join('')+'</ul>';
+h+='<ul>'+d.results.map(x=>{
+const lap=x.status==='needs-laptop';
+return '<li>'+(lap?'💻 ':'')+'<b>'+esc(x.tool)+'</b> — '+esc(x.status)+
+'<br><small>'+esc(typeof x.detail==='string'?x.detail:JSON.stringify(x.detail).slice(0,300))+'</small></li>';}).join('')+'</ul>';
 if(d.needs_confirmation&&d.needs_confirmation.length)
 h+='<p><b>Needs approval:</b><ul>'+d.needs_confirmation.map(c=>'<li>'+esc(c.tool)+': '+esc(c.reason)+'</li>').join('')+'</ul></p>';
 out.innerHTML=h;

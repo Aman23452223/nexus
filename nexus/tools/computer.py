@@ -15,6 +15,20 @@ ANTIGRAVITY = r"C:\Users\amanc\AppData\Local\Programs\Antigravity IDE\Antigravit
 VSCODE = r"C:\Users\amanc\AppData\Local\Programs\Microsoft VS Code\Code.exe"
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 
+
+class NeedsLaptop(Exception):
+    """Raised when a hands-action runs in the cloud. Carries the fix."""
+    def __init__(self, intent_hint: str):
+        self.intent_hint = intent_hint
+        super().__init__(
+            "Ye kaam cloud me nahi hota — laptop pe chalao: "
+            f'python C:\\Users\\amanc\\nexus\\cli.py "{intent_hint}" --yes')
+
+
+def _require_laptop(intent_hint: str = ""):
+    if os.name != "nt":
+        raise NeedsLaptop(intent_hint)
+
 APPS = {
     "whatsapp": {"launch": ["explorer.exe", WHATSAPP_UWP], "window_hint": "WhatsApp"},
     "antigravity": {"launch": [ANTIGRAVITY], "window_hint": "Antigravity", "takes_folder": True, "new_window": "--new-window"},
@@ -32,6 +46,7 @@ def _windows():
 
 
 def list_windows() -> dict:
+    _require_laptop()
     titles = [t for t in _windows() if t]
     return {"count": len(titles), "windows": titles[:40]}
 
@@ -44,6 +59,7 @@ def find_window(hint: str) -> str:
 
 
 def open_app(name: str, target: str = "") -> dict:
+    _require_laptop(f"open {name} {target}".strip())
     key = (name or "").lower().strip()
     if key not in APPS:
         raise RuntimeError(f"Unknown app '{name}'. Known: {sorted(APPS)}")
@@ -77,6 +93,7 @@ def open_app(name: str, target: str = "") -> dict:
 
 
 def focus_window(hint: str) -> dict:
+    _require_laptop()
     import pygetwindow as gw
     for t in _windows():
         if t and hint.lower() in t.lower():
@@ -91,6 +108,7 @@ def focus_window(hint: str) -> dict:
 
 
 def screenshot(name: str = "") -> dict:
+    _require_laptop()
     import pyautogui
     data_dir = os.path.abspath(os.environ.get("NEXUS_DATA_DIR", "./nexus_data"))
     os.makedirs(data_dir, exist_ok=True)
@@ -111,6 +129,7 @@ def active_title() -> str:
 
 def type_text(text: str, window_hint: str = "") -> dict:
     """Type into the focused (or hinted) window. Caller must hold approval."""
+    _require_laptop()
     import pyautogui
     if window_hint:
         focus_window(window_hint)
@@ -122,6 +141,7 @@ def type_text(text: str, window_hint: str = "") -> dict:
 
 def hotkey(*keys: str, window_hint: str = "") -> dict:
     """Press a key combo (e.g. ctrl,s). Caller must hold approval."""
+    _require_laptop()
     import pyautogui
     if window_hint:
         focus_window(window_hint)

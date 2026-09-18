@@ -138,6 +138,9 @@ def execute(intent: str, workspace: str = "", dry_run: bool = False,
                 out = {"status": "unknown-tool"}
             log_event(task_id, "orchestrator", name, "ok", {"spec": spec.verification})
             results.append({"tool": name, "status": "ok", "detail": out})
+        except computer.NeedsLaptop as e:  # hands-action asked in the cloud
+            log_event(task_id, "orchestrator", name, "needs-laptop")
+            results.append({"tool": name, "status": "needs-laptop", "detail": str(e)})
         except Exception as e:  # bounded recovery: record, don't claim success
             log_event(task_id, "orchestrator", name, f"failed: {e}")
             results.append({"tool": name, "status": "failed", "detail": str(e)})
