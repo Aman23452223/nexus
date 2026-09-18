@@ -41,13 +41,6 @@ def extract_app(intent: str) -> str:
 
 def plan_for(intent: str) -> list:
     low = intent.lower()
-    if any(k in low for k in ["deploy", "vercel", "release", "live ", "health"]):
-        steps = ["devops.gh_status", "devops.vercel_inspect"]
-        if devops.extract_url(intent):
-            steps.append("devops.health_check")
-        else:
-            steps.append("devops.vercel_deploy")  # PUBLISH: gated, preview/approval
-        return steps
     if any(k in low for k in ["screenshot", "screen dikha", "screen shot"]):
         return ["computer.screenshot"]
     if any(k in low for k in ["open", "khol", "launch", "start "]):
@@ -57,6 +50,13 @@ def plan_for(intent: str) -> list:
         return ["computer.type"]
     if "press" in low or "dabaa" in low:
         return ["computer.hotkey"]
+    if any(k in low for k in ["deploy", "vercel", "release", "live ", "health"]):
+        steps = ["devops.gh_status", "devops.vercel_inspect"]
+        if devops.extract_url(intent):
+            steps.append("devops.health_check")
+        else:
+            steps.append("devops.vercel_deploy")  # PUBLISH: gated, preview/approval
+        return steps
     if any(k in low for k in ["website", "site", "audit", "hotel"]):
         return ["browser.open", "desktop.list_dir"]
     if any(k in low for k in ["download", "organize", "cleanup", "folder"]):
