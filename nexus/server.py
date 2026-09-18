@@ -36,7 +36,10 @@ if(!SR){out.innerHTML='<p>Mic sirf Chrome me chalta hai.</p>';return;}
 const r=new SR();r.lang='hi-IN';r.interimResults=false;
 out.innerHTML='<p>🎤 Sun raha hu… bolo.</p>';
 r.onresult=e=>{document.getElementById('q').value=e.results[0][0].transcript;run();};
-r.onerror=e=>{out.innerHTML='<p>Mic error: '+esc(e.error)+'</p>';};
+r.onerror=e=>{let m=e.error;
+if(m==='network')m='Brave me mic nahi chalta (voice service blocked). Chrome me yehi site kholo — wahan chalega.';
+else if(m==='not-allowed')m='Mic permission do (address bar ke lock icon me).';
+out.innerHTML='<p>Mic error: '+esc(m)+'</p>';};
 r.start();}
 async function run(){
 const q=document.getElementById('q').value.trim();
