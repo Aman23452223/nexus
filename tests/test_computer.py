@@ -20,6 +20,20 @@ def test_extract_target_url():
 def test_plan_open():
     assert plan_for("nexus whatsapp khol") == ["computer.open"]
     assert plan_for("screenshot le") == ["computer.screenshot"]
+    assert plan_for("open instagram") == ["computer.open"]
+
+
+def test_site_extract():
+    from nexus.orchestrator import extract_site
+    assert extract_site("open instagram") == "https://www.instagram.com"
+    assert extract_site("gmail khol") == "https://mail.google.com"
+
+
+def test_unknown_open_fails_honest():
+    from nexus import orchestrator
+    rep = orchestrator.execute("nexus xqqzzz khol")
+    assert rep["results"][0]["status"] == "failed"
+    assert rep["status"] == "partial"
 
 
 def test_type_needs_plan():

@@ -39,13 +39,22 @@ def extract_app(intent: str) -> str:
     return next((a for a in computer.APPS if a in low), "")
 
 
+def extract_site(intent: str) -> str:
+    low = intent.lower()
+    for site, url in computer.SITES.items():
+        if site in low:
+            return url
+    return ""
+
+
 def plan_for(intent: str) -> list:
     low = intent.lower()
     if any(k in low for k in ["screenshot", "screen dikha", "screen shot"]):
         return ["computer.screenshot"]
     if any(k in low for k in ["open", "khol", "launch", "start "]):
-        if extract_app(intent):
-            return ["computer.open"]
+        # Open-intent always goes to computer.open: known app/site opens,
+        # unknown target fails HONESTLY (never a fake dir-listing "done").
+        return ["computer.open"]
     if "type" in low or "likh" in low:
         return ["computer.type"]
     if "press" in low or "dabaa" in low:
@@ -115,9 +124,17 @@ def execute(intent: str, workspace: str = "", dry_run: bool = False,
                 out = {"status": "needs-approval", "detail": "publish class: preview required"}
             elif name == "computer.open":
                 app = extract_app(intent)
-                if not app:
-                    raise RuntimeError("no known app in intent")
-                out = computer.open_app(app, extract_computer_target(intent))
+                if app:
+                    out = computer.open_app(app, extract_computer_target(intent))
+                else:
+                    site = extract_site(intent)
+                    if site:
+                        out = computer.open_app("chrome", site)
+                    else:
+                        raise RuntimeError(
+                            "Nahi khol paya: na koi known app, na site. "
+                            f"Apps: {sorted(computer.APPS)} | "
+                            f"Sites: {sorted(computer.SITES)}")
             elif name == "computer.screenshot":
                 out = computer.screenshot()
             elif name == "computer.windows":

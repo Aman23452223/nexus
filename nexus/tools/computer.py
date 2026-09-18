@@ -39,6 +39,17 @@ APPS = {
     "explorer": {"launch": ["explorer.exe"], "window_hint": "File Explorer", "takes_folder": True},
 }
 
+# No desktop app? Open the site in Chrome instead.
+SITES = {
+    "instagram": "https://www.instagram.com",
+    "youtube": "https://www.youtube.com",
+    "gmail": "https://mail.google.com",
+    "whatsapp web": "https://web.whatsapp.com",
+    "github": "https://github.com",
+    "vercel dashboard": "https://vercel.com",
+    "google": "https://www.google.com",
+}
+
 
 def _windows():
     import pygetwindow as gw
