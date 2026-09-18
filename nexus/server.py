@@ -1,4 +1,6 @@
 """FastAPI control plane (PRD §27): auth-lite, tasks, policy, stop."""
+import os
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
@@ -70,7 +72,11 @@ speak(say.slice(0,300));}
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
-    return DASHBOARD
+    mode = ("💻 LAPTOP MODE — haath-pair live (apps, files, browser, deploy)"
+            if os.name == "nt" else
+            "☁️ CLOUD MODE — dimaag only (health checks, reports)")
+    return DASHBOARD.replace("Policy-gated publish.",
+                             f"Policy-gated publish.<br><b>{mode}</b>", 1)
 
 
 class TaskIn(BaseModel):
