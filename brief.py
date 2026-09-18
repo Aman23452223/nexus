@@ -10,11 +10,9 @@ from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-WATCH_URLS = [
-    "https://nexus-gamma-drab.vercel.app/health",
-    "https://arbitrage-agent-gules.vercel.app",
-    "https://www.tomorrow-land.in",
-]
+# Watch list is user-configured, never hardcoded:
+# set NEXUS_WATCH_URLS="https://a.com,https://b.com" in local .env
+WATCH_URLS = [u.strip() for u in os.environ.get("NEXUS_WATCH_URLS", "").split(",") if u.strip()]
 
 
 def section(name: str, fn) -> str:
@@ -26,6 +24,8 @@ def section(name: str, fn) -> str:
 
 def health_lines() -> str:
     from nexus.tools import devops
+    if not WATCH_URLS:
+        return "- no watch URLs configured (set NEXUS_WATCH_URLS in .env)"
     out = []
     for u in WATCH_URLS:
         try:

@@ -15,8 +15,7 @@ DASHBOARD = """<!doctype html><html><head><meta charset=utf-8>
 <input id=q size=60 placeholder="e.g. arbitrage-agent health check https://...">
 <button onclick="run()">Run</button> <a href="/health">/health</a> <a href="/docs">/docs</a>
 <div style="margin:8px 0">
-<button onclick="set('arbitrage-agent health check https://arbitrage-agent-gules.vercel.app')">arbitrage-agent health</button>
-<button onclick="set('tomorrow-land.in health check https://www.tomorrow-land.in')">tomorrow-land health</button>
+<button onclick="set('health check https://example.com')">example health check</button>
 </div>
 <div id=out></div>
 <script>
