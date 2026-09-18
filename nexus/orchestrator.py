@@ -53,7 +53,7 @@ def plan_for(intent: str) -> list:
     if any(k in low for k in ["open", "khol", "launch", "start "]):
         if extract_app(intent):
             return ["computer.open"]
-    if any(k in low for k in ["type ", "likh "]):
+    if "type" in low or "likh" in low:
         return ["computer.type"]
     if "press" in low or "dabaa" in low:
         return ["computer.hotkey"]
