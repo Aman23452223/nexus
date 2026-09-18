@@ -1,0 +1,6 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+nexus_data/
+audit_log.jsonl
