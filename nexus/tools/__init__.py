@@ -21,6 +21,7 @@ REGISTRY = {
     "computer.windows": ToolSpec("computer.windows", "computer", RiskClass.READ, "window list returned"),
     "computer.type": ToolSpec("computer.type", "computer", RiskClass.REVERSIBLE, "typed into verified window"),
     "computer.hotkey": ToolSpec("computer.hotkey", "computer", RiskClass.REVERSIBLE, "keys sent to verified window"),
+    "computer.whatsapp_send": ToolSpec("computer.whatsapp_send", "communication", RiskClass.PUBLISH, "keys sent to WhatsApp chat"),
     "browser.open": ToolSpec("browser.open", "browser", RiskClass.READ, "URL + title captured"),
     "devops.gh_status": ToolSpec("devops.gh_status", "developer", RiskClass.READ, "gh auth status ok"),
     "devops.vercel_inspect": ToolSpec("devops.vercel_inspect", "developer", RiskClass.READ, "project list returned"),

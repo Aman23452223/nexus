@@ -2,6 +2,11 @@
 import json
 import sys
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 from nexus.orchestrator import execute
 
 

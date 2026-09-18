@@ -18,6 +18,7 @@ DASHBOARD = """<!doctype html><html><head><meta charset=utf-8>
 <button onclick="run()">Run</button>
 <button onclick="mic()" title="bolke bolo 🎤">🎤</button>
 <button onclick="voice=!voice;this.textContent=voice?'🔊':'🔇'" title="jawab sunna">🔊</button>
+<label title="send/type wale kaam turant ho (bina roke)"><input type=checkbox id=arm> ✅ bhejne do</label>
 <a href="/health">/health</a> <a href="/docs">/docs</a>
 <div style="margin:8px 0">☁️ Cloud:
 <button onclick="set('health check https://example.com')">example health</button>
@@ -51,7 +52,7 @@ const out=document.getElementById('out');
 if(!q){out.innerHTML='<p style=color:#a00>Intent likho pehle — khaali command nahi chalegi.</p>';return;}
 out.innerHTML='<p>Working…</p>';
 const r=await fetch('/tasks',{method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({intent:q})});
+body:JSON.stringify({intent:q,auto_approve:document.getElementById('arm').checked})});
 if(!r.ok){out.innerHTML='<p style=color:#a00>Rejected: '+(await r.text()).slice(0,200)+'</p>';return;}
 const d=await r.json();
 let h='<h3>Status: '+esc(d.status)+' <small>('+esc(d.task_id)+' · '+esc(d.workspace)+')</small></h3>';

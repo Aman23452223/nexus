@@ -72,9 +72,13 @@ def find_window(hint: str) -> str:
 def open_app(name: str, target: str = "") -> dict:
     _require_laptop(f"open {name} {target}".strip())
     key = (name or "").lower().strip()
-    if key not in APPS:
-        raise RuntimeError(f"Unknown app '{name}'. Known: {sorted(APPS)}")
-    spec = APPS[key]
+    if key in APPS:
+        return _open_known(key, APPS[key], target)
+    # Unknown app → Windows Start search fallback (koi bhi installed app).
+    return _open_via_start_search(name)
+
+
+def _open_known(key: str, spec: dict, target: str) -> dict:
     cmd = list(spec["launch"])
     if target and spec.get("takes_folder") and os.path.exists(target):
         if spec.get("new_window"):
@@ -160,3 +164,54 @@ def hotkey(*keys: str, window_hint: str = "") -> dict:
     pyautogui.hotkey(*keys)
     return {"keys": "+".join(keys), "window": before,
             "verification": f"sent to '{before}'"}
+
+
+def _open_via_start_search(name: str) -> dict:
+    """Koi bhi installed app: Win dabao → naam likho → Enter → window verify."""
+    import pyautogui
+    pyautogui.press("win")
+    time.sleep(0.8)
+    pyautogui.write(name, interval=0.03)
+    time.sleep(0.8)
+    pyautogui.press("enter")
+    found = ""
+    first = name.split()[0]
+    for _ in range(20):
+        time.sleep(0.5)
+        found = find_window(first)
+        if found and "search" not in found.lower() and "start" not in found.lower():
+            break
+        found = ""
+    if not found:
+        raise RuntimeError(f"'{name}' Start search se nahi khula — naam check karo")
+    return {"app": name, "window": found, "via": "start-search",
+            "verification": f"window '{found}' observed on screen"}
+
+
+def trusted_contacts() -> list[str]:
+    return [c.strip().lower() for c in
+            os.environ.get("NEXUS_TRUSTED_CONTACTS", "").split(",") if c.strip()]
+
+
+def whatsapp_send(contact: str, message: str) -> dict:
+    """WhatsApp Desktop me contact ko message. Pehle chat khulti hai,
+    phir type + Enter. Caller must hold approval (ya trusted contact).
+    Delivery bubble verify nahi hota (no vision) — ye report me saaf likha."""
+    import pyautogui
+    if not find_window("WhatsApp"):
+        raise RuntimeError("WhatsApp khula nahi — pehle 'whatsapp khol' chalao")
+    focus_window("WhatsApp")
+    time.sleep(0.5)
+    if "whatsapp" not in active_title().lower():
+        raise RuntimeError("WhatsApp focus me nahi — galat window me type nahi karunga")
+    pyautogui.hotkey("ctrl", "f")          # search
+    time.sleep(0.6)
+    pyautogui.write(contact, interval=0.03)
+    time.sleep(1.2)
+    pyautogui.press("enter")               # chat kholo
+    time.sleep(1.0)
+    pyautogui.write(message, interval=0.02)
+    time.sleep(0.4)
+    pyautogui.press("enter")               # bhej
+    return {"to": contact, "message": message,
+            "verification": "keys sent to WhatsApp chat — app me delivery tick dekho"}
