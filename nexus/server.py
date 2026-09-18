@@ -12,15 +12,32 @@ DASHBOARD = """<!doctype html><html><head><meta charset=utf-8>
 <title>NEXUS MVP</title></head><body style="font-family:sans-serif;max-width:760px;margin:40px auto">
 <h1>NEXUS MVP — permissioned operator</h1>
 <p>Outcome in, verified report out. Policy-gated publish.</p>
-<input id=q size=60 placeholder="e.g. arbitrage-agent health check https://...">
-<button onclick="run()">Run</button> <a href="/health">/health</a> <a href="/docs">/docs</a>
+<input id=q size=60 placeholder="e.g. whatsapp khol, ya health check https://...">
+<button onclick="run()">Run</button>
+<button onclick="mic()" title="bolke bolo 🎤">🎤</button>
+<button onclick="voice=!voice;this.textContent=voice?'🔊':'🔇'" title="jawab sunna">🔊</button>
+<a href="/health">/health</a> <a href="/docs">/docs</a>
 <div style="margin:8px 0">
-<button onclick="set('health check https://example.com')">example health check</button>
+<button onclick="set('whatsapp khol')">WhatsApp khol</button>
+<button onclick="set('antigravity me nexus khol C:\\Users\\amanc\\nexus')">Antigravity + nexus</button>
+<button onclick="set('health check https://example.com')">example health</button>
 </div>
 <div id=out></div>
 <script>
+let voice=true;
 function set(v){document.getElementById('q').value=v;run();}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function speak(t){try{if(!voice)return;const u=new SpeechSynthesisUtterance(t);
+u.lang='hi-IN';speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+function mic(){
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const out=document.getElementById('out');
+if(!SR){out.innerHTML='<p>Mic sirf Chrome me chalta hai.</p>';return;}
+const r=new SR();r.lang='hi-IN';r.interimResults=false;
+out.innerHTML='<p>🎤 Sun raha hu… bolo.</p>';
+r.onresult=e=>{document.getElementById('q').value=e.results[0][0].transcript;run();};
+r.onerror=e=>{out.innerHTML='<p>Mic error: '+esc(e.error)+'</p>';};
+r.start();}
 async function run(){
 const q=document.getElementById('q').value.trim();
 const out=document.getElementById('out');
@@ -37,7 +54,9 @@ h+='<ul>'+d.results.map(x=>'<li><b>'+esc(x.tool)+'</b> — '+esc(x.status)+
 '<br><small>'+esc(JSON.stringify(x.detail).slice(0,300))+'</small></li>').join('')+'</ul>';
 if(d.needs_confirmation&&d.needs_confirmation.length)
 h+='<p><b>Needs approval:</b><ul>'+d.needs_confirmation.map(c=>'<li>'+esc(c.tool)+': '+esc(c.reason)+'</li>').join('')+'</ul></p>';
-out.innerHTML=h;}
+out.innerHTML=h;
+const say='Status '+d.status+'. '+d.results.map(x=>x.tool+' '+x.status).join('. ');
+speak(say.slice(0,300));}
 </script>
 </body></html>"""
 

@@ -3,12 +3,13 @@ Intent → Discovery → Plan → Policy → Execute → Verify → Recover → 
 MVP: explicit phase state + verification gate + bounded retry, no blind success.
 """
 from dataclasses import dataclass, field
+import re
 
 from .audit import log_event, new_task_id
 from .config import settings
 from .policy import RiskClass, evaluate
 from .tools import REGISTRY
-from .tools import desktop, browser, devops, files
+from .tools import desktop, browser, devops, files, computer
 
 
 @dataclass
@@ -20,6 +21,24 @@ class Task:
     status: str = "planned"
 
 
+def extract_computer_target(intent: str) -> str:
+    url = devops.extract_url(intent)
+    if url:
+        return url
+    m = re.search(r"[A-Za-z]:\\[^\s\"']+", intent)
+    if m:
+        return m.group(0).rstrip(".,;)")
+    m = re.search(r'"([^"]+)"', intent)
+    if m:
+        return m.group(1)
+    return ""
+
+
+def extract_app(intent: str) -> str:
+    low = intent.lower()
+    return next((a for a in computer.APPS if a in low), "")
+
+
 def plan_for(intent: str) -> list:
     low = intent.lower()
     if any(k in low for k in ["deploy", "vercel", "release", "live ", "health"]):
@@ -29,6 +48,15 @@ def plan_for(intent: str) -> list:
         else:
             steps.append("devops.vercel_deploy")  # PUBLISH: gated, preview/approval
         return steps
+    if any(k in low for k in ["screenshot", "screen dikha", "screen shot"]):
+        return ["computer.screenshot"]
+    if any(k in low for k in ["open", "khol", "launch", "start "]):
+        if extract_app(intent):
+            return ["computer.open"]
+    if any(k in low for k in ["type ", "likh "]):
+        return ["computer.type"]
+    if "press" in low or "dabaa" in low:
+        return ["computer.hotkey"]
     if any(k in low for k in ["website", "site", "audit", "hotel"]):
         return ["browser.open", "desktop.list_dir"]
     if any(k in low for k in ["download", "organize", "cleanup", "folder"]):
@@ -39,6 +67,7 @@ def plan_for(intent: str) -> list:
 def execute(intent: str, workspace: str = "", dry_run: bool = False,
             auto_approve: bool = False) -> dict:
     ws = workspace or settings.workspace
+    low = intent.lower()
     task_id = new_task_id()
     steps = plan_for(intent)
     task = Task(intent=intent, workspace=ws, task_id=task_id, plan=steps)
@@ -46,6 +75,12 @@ def execute(intent: str, workspace: str = "", dry_run: bool = False,
 
     for name in steps:
         spec = REGISTRY[name]
+        if name in ("computer.type", "computer.hotkey") and not auto_approve:
+            reason = "typing/keypress needs explicit approval (CLI --yes)"
+            confirmations.append({"tool": name, "reason": reason})
+            log_event(task_id, "orchestrator", name, "awaiting-confirmation", {"risk": spec.risk.value})
+            results.append({"tool": name, "status": "awaiting-confirmation", "detail": reason})
+            continue
         gate = evaluate(spec.risk, ws, dry_run=dry_run or settings.dry_run)
         if gate.needs_confirmation:
             confirmations.append({"tool": name, "reason": gate.reason})
@@ -78,6 +113,27 @@ def execute(intent: str, workspace: str = "", dry_run: bool = False,
                 out = devops.deployment_health(url)
             elif name == "devops.vercel_deploy":
                 out = {"status": "needs-approval", "detail": "publish class: preview required"}
+            elif name == "computer.open":
+                app = extract_app(intent)
+                if not app:
+                    raise RuntimeError("no known app in intent")
+                out = computer.open_app(app, extract_computer_target(intent))
+            elif name == "computer.screenshot":
+                out = computer.screenshot()
+            elif name == "computer.windows":
+                out = computer.list_windows()
+            elif name == "computer.type":
+                m = re.search(r'"([^"]+)"', intent)
+                text = m.group(1) if m else ""
+                if not text:
+                    raise RuntimeError("computer.type needs quoted text")
+                out = computer.type_text(text)
+            elif name == "computer.hotkey":
+                m = re.search(r"(ctrl|alt|shift|win|enter|esc|tab)[+,\s]*(\w+)?", low)
+                keys = [k for k in m.groups() if k] if m else []
+                if not keys:
+                    raise RuntimeError("computer.hotkey needs keys like ctrl+s")
+                out = computer.hotkey(*keys)
             else:
                 out = {"status": "unknown-tool"}
             log_event(task_id, "orchestrator", name, "ok", {"spec": spec.verification})
